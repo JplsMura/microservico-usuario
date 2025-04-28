@@ -20,4 +20,20 @@ public class UsuarioService {
                 usuarioRepository.save(usuario)
         );
     }
+
+    public void emailExiste(String email) {
+        try {
+            boolean existente = verificaEmailExistente(email);
+
+            if (existente) {
+                throw new ConflictException("Email já cadastrado no sistema " + email);
+            }
+        } catch (ConflictException e) {
+            throw new ConflictException("Email já cadastrado no sistema ", e.getCause());
+        }
+    }
+
+    public boolean verificaEmailExistente(String email) {
+        return usuarioRepository.existsByEmail(email);
+    }
 }
