@@ -6,6 +6,7 @@ import com.javanauta.usuario.infrastructure.entity.Usuario;
 import com.javanauta.usuario.infrastructure.exceptions.ConflictException;
 import com.javanauta.usuario.infrastructure.exceptions.ResourceNotFoundException;
 import com.javanauta.usuario.infrastructure.repository.UsuarioRepository;
+import com.javanauta.usuario.infrastructure.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final UsuarioConverter usuarioConverter;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
     public UsuarioDTO salvarUsuario(UsuarioDTO usuarioDTO) {
         emailExiste(usuarioDTO.getEmail());
@@ -51,5 +53,23 @@ public class UsuarioService {
 
     public void deletaUsuarioPorEmail(String email) {
         usuarioRepository.deleteByEmail(email);
+    }
+
+    public UsuarioDTO atualizaDadosUsuario(String token, UsuarioDTO usuarioDTO) {
+        // extrai o email do token enviado pela request
+        String email = jwtUtil.extractEmailToken(token.substring(7));
+
+        // verifica se a senha foi enviada ai criptografa a mesma caso contrario não faz nada
+        usuarioDTO.setSenha(usuarioDTO.getSenha() != null ? passwordEncoder.encode(usuarioDTO.getSenha()) : null);
+
+        // buscar o usuario no banco através do email
+        Usuario usuarioEntity = usuarioRepository.findByEmail(email).orElseThrow(
+                () -> new ResourceNotFoundException("Email não localizado"));
+
+        // pega os dados do DTO e da entity e verifica caso foi enviado pega do DTO caso contrario da entity
+        Usuario usuario = usuarioConverter.updateUsuario(usuarioDTO, usuarioEntity);
+
+        // Salva o dado via repository e retorno o dado convertido pelo DTO ao controller
+        return usuarioConverter.paraUsuarioDTO(usuarioRepository.save(usuario));
     }
 }
