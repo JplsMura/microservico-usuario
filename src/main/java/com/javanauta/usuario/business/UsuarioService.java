@@ -110,4 +110,14 @@ public class UsuarioService {
 
         return usuarioConverter.paraTelefoneDTO(telefoneRepository.save(telefone));
     }
+
+    public EnderecoDTO cadastroEndereco(String token, EnderecoDTO dto) {
+        String email = jwtUtil.extractEmailToken(token);
+
+        Usuario usuario = usuarioRepository.findByEmail(email).orElseThrow(
+                        () -> new ResourceNotFoundException("Email não encontrato " + email)
+                );
+
+
+    }
 }
